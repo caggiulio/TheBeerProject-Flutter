@@ -58,25 +58,31 @@ class _MyHomePageState extends State<MyHomePage> {
 
   void _onTapRow(Beer data) {
     selectedBeer = data;
-    showModalBottomSheet(context: context, builder: (BuildContext context) {return new BeerDetail(data: selectedBeer);});
+    showModalBottomSheet(
+        context: context,
+        builder: (BuildContext context) {
+          return new BeerDetail(data: selectedBeer);
+        });
     /*Navigator.push(
         context, CupertinoPageRoute(builder: (context) => BeerDetail()));*/
   }
 
   int page = 1;
-  bool loading = false;
+  bool loadMore = false;
   ScrollController _scrollController = new ScrollController();
 
   @override
   Widget build(BuildContext context) {
-
     _scrollController.addListener(() {
-      if (!loading && _scrollController.position.axisDirection == AxisDirection.down && _scrollController.position.pixels / _scrollController.position.maxScrollExtent > 0.8) {
-        loading = true;
+      if (!api.isBusy &&
+          !api.noMoreBeers &&
+          _scrollController.position.axisDirection == AxisDirection.down &&
+          _scrollController.position.pixels /
+                  _scrollController.position.maxScrollExtent >
+              0.8) {
         setState(() {
-          page++;
+          loadMore = true;
         });
-        print("sei abbastanza giù");
       }
       //print("La posizione attuale è: ${_scrollController.position}");
     });
@@ -88,27 +94,41 @@ class _MyHomePageState extends State<MyHomePage> {
     // than having to individually change instances of widgets.
     return Scaffold(
       appBar: AppBar(
-        title: Text("ciao"),
+        title: Text("The Beer Project®"),
       ),
       body: Center(
         // Center is a layout widget. It takes a single child and positions it
         // in the middle of the parent.
         child: FutureBuilder<List<Beer>>(
-          future: api.fetchBeers(page),
+          future: api.fetchBeers(page + (loadMore ? 1 : 0)),
           builder: (context, snapshot) {
             if (snapshot.hasData) {
-              loading = false;
+              if (loadMore) {
+                print("page from $page to ${page + 1}");
+                page++;
+                loadMore = false;
+              }
               return Container(
                 child: ListView.builder(
-                  controller: _scrollController,
-                    itemCount: snapshot.data.length,
+                    controller: _scrollController,
+                    itemCount: snapshot.data.length + (api.noMoreBeers ? 0 : 1),
                     // ignore: missing_return
                     itemBuilder: (BuildContext context, i) {
-                      return new BeerListItem(
-                          data: snapshot.data[i],
-                          onTapCell: () {
-                            _onTapRow(snapshot.data[i]);
-                          });
+                      return i >= snapshot.data.length
+                          ? Column(
+                              crossAxisAlignment: CrossAxisAlignment.center,
+                              children: <Widget>[
+                                  Container(
+                                      padding: EdgeInsets.all(10),
+                                      child: CircularProgressIndicator())
+                                ])
+                          : new BeerListItem(
+                              data: snapshot.data[i],
+                              onTapCell: () {
+                                _onTapRow(snapshot.data[i]);
+                              },
+                              i: i,
+                            );
                     }),
               );
             } else if (snapshot.hasError) {

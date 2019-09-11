@@ -3,15 +3,16 @@ import 'package:flutter/material.dart';
 import 'Beer.dart';
 
 class BeerListItem extends StatelessWidget {
-   const BeerListItem({Key key, this.data, this.onTapCell})
+   const BeerListItem({Key key, this.data, this.onTapCell, this.i})
       : super(key: key);
 
   final Beer data;
   final Function onTapCell;
+  final int i;
 
   @override
   Widget build(BuildContext context) {
-    return Column(children: <Widget>[
+    return data == null ? Container() : Column(children: <Widget>[
       GestureDetector(
         onTap: onTapCell,
         child: Container(
@@ -21,7 +22,7 @@ class BeerListItem extends StatelessWidget {
             children: <Widget>[
               Expanded(
                 flex: 5,
-                child: Image.network(data.imageUrl,
+                child: data.imageUrl == null ? Container() : Image.network(data.imageUrl,
                     fit: BoxFit.fitHeight,
                     height: 300,
                     width: 100,
