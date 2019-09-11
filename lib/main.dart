@@ -15,18 +15,19 @@ class MyApp extends StatelessWidget {
     return MaterialApp(
       title: 'Flutter Demo',
       theme: ThemeData(
-        // This is the theme of your application.
-        //
-        // Try running your application with "flutter run". You'll see the
-        // application has a blue toolbar. Then, without quitting the app, try
-        // changing the primarySwatch below to Colors.green and then invoke
-        // "hot reload" (press "r" in the console where you ran "flutter run",
-        // or simply save your changes to "hot reload" in a Flutter IDE).
-        // Notice that the counter didn't reset back to zero; the application
-        // is not restarted.
-        primarySwatch: Colors.blueGrey,
-        textTheme: Typography.whiteCupertino
-      ),
+          // This is the theme of your application.
+          //
+          // Try running your application with "flutter run". You'll see the
+          // application has a blue toolbar. Then, without quitting the app, try
+          // changing the primarySwatch below to Colors.green and then invoke
+          // "hot reload" (press "r" in the console where you ran "flutter run",
+          // or simply save your changes to "hot reload" in a Flutter IDE).
+          // Notice that the counter didn't reset back to zero; the application
+          // is not restarted.
+          primarySwatch: Colors.blueGrey,
+          scaffoldBackgroundColor: Colors.blueGrey.shade800,
+          backgroundColor: Colors.blueGrey.shade800,
+          textTheme: Typography.whiteCupertino),
       home: MyHomePage(title: 'Flutter Demo Home Page'),
     );
   }
@@ -45,21 +46,40 @@ class MyHomePage extends StatefulWidget {
   // always marked "final".
 
   final String title;
-  
+
   @override
   _MyHomePageState createState() => _MyHomePageState();
 }
 
 class _MyHomePageState extends State<MyHomePage> {
-
   final API api = new API();
 
-  void _onTapRow() {
-    Navigator.push(context,MaterialPageRoute(builder: (context) => BeerDetail()));
+  Beer selectedBeer;
+
+  void _onTapRow(Beer data) {
+    selectedBeer = data;
+    showModalBottomSheet(context: context, builder: (BuildContext context) {return new BeerDetail(data: selectedBeer);});
+    /*Navigator.push(
+        context, CupertinoPageRoute(builder: (context) => BeerDetail()));*/
   }
+
+  int page = 1;
+  bool loading = false;
+  ScrollController _scrollController = new ScrollController();
 
   @override
   Widget build(BuildContext context) {
+
+    _scrollController.addListener(() {
+      if (!loading && _scrollController.position.axisDirection == AxisDirection.down && _scrollController.position.pixels / _scrollController.position.maxScrollExtent > 0.8) {
+        loading = true;
+        setState(() {
+          page++;
+        });
+        print("sei abbastanza giù");
+      }
+      //print("La posizione attuale è: ${_scrollController.position}");
+    });
     // This method is rerun every time setState is called, for instance as done
     // by the _incrementCounter method above.
     //
@@ -74,10 +94,23 @@ class _MyHomePageState extends State<MyHomePage> {
         // Center is a layout widget. It takes a single child and positions it
         // in the middle of the parent.
         child: FutureBuilder<List<Beer>>(
-          future: api.fetchBeers(),
+          future: api.fetchBeers(page),
           builder: (context, snapshot) {
             if (snapshot.hasData) {
-              return new BeerListItem(snapshot: snapshot, onTapCell: _onTapRow);
+              loading = false;
+              return Container(
+                child: ListView.builder(
+                  controller: _scrollController,
+                    itemCount: snapshot.data.length,
+                    // ignore: missing_return
+                    itemBuilder: (BuildContext context, i) {
+                      return new BeerListItem(
+                          data: snapshot.data[i],
+                          onTapCell: () {
+                            _onTapRow(snapshot.data[i]);
+                          });
+                    }),
+              );
             } else if (snapshot.hasError) {
               return Text("${snapshot.error}");
             }
@@ -86,8 +119,15 @@ class _MyHomePageState extends State<MyHomePage> {
             return CircularProgressIndicator();
           },
         ),
-
       ),
-      );
+      /*bottomSheet: selectedBeer != null ?
+        BottomSheet(builder: (BuildContext context) {
+        return new BeerDetail(data: selectedBeer,);
+      }, onClosing: () {
+          setState(() {
+            selectedBeer = null;
+          });
+        },) : Container(height: 0, width: 0,)*/
+    );
   }
 }
