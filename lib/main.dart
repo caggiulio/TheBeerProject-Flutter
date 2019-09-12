@@ -3,6 +3,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_app/BeerDetail.dart';
 import 'API.dart';
 import 'Beer.dart';
+import 'BeerListHeader.dart';
 import 'BeerListItem.dart';
 import 'RandomBeer.dart';
 
@@ -56,6 +57,7 @@ class _MyHomePageState extends State<MyHomePage> {
   final API api = new API();
 
   Beer selectedBeer;
+  String selectedCategory = "";
   bool isSearching;
   TextEditingController searchController;
   String queryName = "";
@@ -66,20 +68,32 @@ class _MyHomePageState extends State<MyHomePage> {
     isSearching = false;
     searchController = TextEditingController();
     searchController.addListener(() {
-        setState(() {
-          this.queryName = searchController.text;
-          api.fetchedBeers.clear();
-        });
+      setState(() {
+        this.queryName = searchController.text;
+        api.fetchedBeers.clear();
+      });
     });
   }
 
-  void _onTapRow(Beer data) {
+  void _onTapRow(Beer data, int i) {
     selectedBeer = data;
     showModalBottomSheet(
         context: context,
         builder: (BuildContext context) {
-          return new BeerDetail(data: selectedBeer);
+          return new BeerDetail(data: selectedBeer, i: i);
         });
+    /*Navigator.push(
+        context, CupertinoPageRoute(builder: (context) => BeerDetail()));*/
+  }
+
+  void _onTapCategory(String category) {
+    if (selectedCategory != category) {
+      api.resetBeersList();
+      setState(() {
+        page = 1;
+        selectedCategory = category;
+      });
+    }
   }
 
   int page = 1;
@@ -130,51 +144,61 @@ class _MyHomePageState extends State<MyHomePage> {
           ) : Text("The Beer Project®")
       ),
       body:
-          Center(
-            child: Column(
-              mainAxisSize: MainAxisSize.min,
-              children: <Widget>[
-                Container(
-                  height: 100,
-                  margin: EdgeInsets.only(top: 12.0, left: 12.0, right: 12.0),
-                  child: RandomBeer(api: api, onTapFunc: _onTapRow)
-                ),
-                Flexible(
-                    child: FutureBuilder<List<Beer>>(
-                      future: api.fetchBeers(page + (loadMore ? 1 : 0), queryName),
-                      builder: (context, snapshot) {
-                        if (snapshot.hasData) {
-                          if (loadMore) {
-                            print("page from $page to ${page + 1}");
-                            page++;
-                            loadMore = false;
-                          }
-                          return Container(
-                            child: ListView.builder(
-                                controller: _scrollController,
-                                itemCount: snapshot.data.length + (api.noMoreBeers ? 0 : 1),
-                                // ignore: missing_return
-                                itemBuilder: (BuildContext context, i) {
-                                  return i >= snapshot.data.length
-                                      ? Column(
-                                      crossAxisAlignment: CrossAxisAlignment.center,
-                                      children: <Widget>[
-                                        Container(
-                                            padding: EdgeInsets.all(10),
-                                            child: CircularProgressIndicator())
-                                      ])
-                                      : new BeerListItem(
-                                    data: snapshot.data[i],
-                                    onTapCell: () {
-                                      _onTapRow(snapshot.data[i]);
-                                    },
-                                    i: i,
-                                  );
-                                }),
-                          );
-                        } else if (snapshot.hasError) {
-                          return Text("${snapshot.error}");
-                        }
+      Center(
+        child: Column(
+        mainAxisSize: MainAxisSize.min,
+        children: <Widget>[
+        Container(
+        height: 100,
+        margin: EdgeInsets.only(top: 12.0, left: 12.0, right: 12.0),
+        child: RandomBeer(api: api, onTapFunc: _onTapRow)
+    ),
+    Flexible(
+    child: FutureBuilder<List<Beer>>(
+          future: api.fetchBeers(page + (loadMore ? 1 : 0), queryName, selectedCategory),
+          builder: (context, snapshot) {
+            if (snapshot.hasData) {
+              if (loadMore) {
+                print("page from $page to ${page + 1}");
+                page++;
+                loadMore = false;
+              }
+              return Container(
+                child: ListView.builder(
+                    controller: _scrollController,
+                    itemCount:
+                        1 + snapshot.data.length + (api.noMoreBeers ? 0 : 1),
+                    // ignore: missing_return
+                    itemBuilder: (BuildContext context, i) {
+                      if (i == 0) {
+                        return new BeerListHeader(
+                          onTapCell: _onTapCategory,
+                          checkSelected: (key) {
+                            return key == selectedCategory;
+                          },
+                        );
+                      }
+                      i--;
+                      return i >= snapshot.data.length
+                          ? Column(
+                              crossAxisAlignment: CrossAxisAlignment.center,
+                              children: <Widget>[
+                                  Container(
+                                      padding: EdgeInsets.all(10),
+                                      child: CircularProgressIndicator())
+                                ])
+                          : new BeerListItem(
+                              data: snapshot.data[i],
+                              onTapCell: () {
+                                _onTapRow(snapshot.data[i], i);
+                              },
+                              i: i,
+                            );
+                    }),
+              );
+            } else if (snapshot.hasError) {
+              return Text("${snapshot.error}");
+            }
 
                         // By default, show a loading spinner.
                         return CircularProgressIndicator();

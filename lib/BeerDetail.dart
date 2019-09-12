@@ -3,23 +3,25 @@ import 'package:flutter/material.dart';
 import 'Beer.dart';
 
 class BeerDetail extends StatelessWidget {
-  const BeerDetail({Key key, this.data})
+  const BeerDetail({Key key, this.data, this.i})
       : super(key: key);
 
   final Beer data;
+  final int i;
   // This widget is the root of your application.
   @override
   Widget build(BuildContext context) {
     return Container(
-      height: 250,
+      height: 450,
       color: Colors.blueGrey.shade800,
       padding: EdgeInsets.only(right: 10, left: 10, top: 20, bottom: 20),
       child: Row(
-        crossAxisAlignment: CrossAxisAlignment.start,
+        crossAxisAlignment: CrossAxisAlignment.center,
         children: <Widget>[
           Expanded(
             flex: 5,
-            child: Image.network(data.imageUrl,
+            child: data.imageUrl == null ? Container() :
+            Image.network(data.imageUrl,
                 fit: BoxFit.fitHeight,
                 height: 300,
                 width: 100,
@@ -28,6 +30,7 @@ class BeerDetail extends StatelessWidget {
           Expanded(
             flex: 4,
             child: Column(
+              mainAxisSize: MainAxisSize.min,
               crossAxisAlignment: CrossAxisAlignment.start,
               children: <Widget>[
                 Text(

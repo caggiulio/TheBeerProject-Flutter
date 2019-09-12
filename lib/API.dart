@@ -1,6 +1,7 @@
 
 import 'dart:async';
 import 'dart:convert';
+import 'package:flutter/material.dart';
 import 'package:http/http.dart' as http;
 import 'Beer.dart';
 
@@ -20,16 +21,24 @@ class API {
   bool isBusy = false;
   int lastCallId = 0;
 
-  Future<List<Beer>> fetchBeers(int page, String query) async {
+  void resetBeersList() {
+    fetchedBeers.clear();
+    noMoreBeers = false;
+  }
+
+  Future<List<Beer>> fetchBeers(int page, String query, String malt) async {
     int myCallId = ++lastCallId;
+    isBusy = true;
     var finalQuery = "beers?page=$page";
     if (query.isNotEmpty) {
-      finalQuery = finalQuery+"&"+"beer_name=$query";
+      finalQuery = finalQuery + "&beer_name=$query";
     }
-    isBusy = true;
+    if (malt.isNotEmpty) {
+      finalQuery = finalQuery + "&malt=$malt";
+    }
     final response = await http.get(host + finalQuery);
     isBusy = false;
-    if(lastCallId == myCallId) {
+    if (lastCallId == myCallId) {
       if (response.statusCode == 200) {
         // If the call to the server was successful, parse the JSON
         final beers = (json.decode(response.body) as List).map((singleJson) =>
