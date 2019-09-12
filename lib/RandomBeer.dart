@@ -6,7 +6,7 @@ import 'Beer.dart';
 class RandomBeer extends StatelessWidget {
 
   API api;
-  Function(Beer data) onTapFunc;
+  Function(Beer data, int i) onTapFunc;
 
   RandomBeer({this.api, this.onTapFunc});
 
@@ -21,7 +21,7 @@ class RandomBeer extends StatelessWidget {
 
               return GestureDetector(
                   onTap: () {
-                    onTapFunc(randomBeer);
+                    onTapFunc(randomBeer, 0);
                   },
                   child: Container(
                       padding: EdgeInsets.all(15.0),
