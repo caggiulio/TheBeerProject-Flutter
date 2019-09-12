@@ -74,12 +74,12 @@ class _MyHomePageState extends State<MyHomePage> {
     });
   }
 
-  void _onTapRow(Beer data) {
+  void _onTapRow(Beer data, int i) {
     selectedBeer = data;
     showModalBottomSheet(
         context: context,
         builder: (BuildContext context) {
-          return new BeerDetail(data: selectedBeer);
+          return new BeerDetail(data: selectedBeer, i: i);
         });
     /*Navigator.push(
         context, CupertinoPageRoute(builder: (context) => BeerDetail()));*/
@@ -181,7 +181,7 @@ class _MyHomePageState extends State<MyHomePage> {
                           : new BeerListItem(
                               data: snapshot.data[i],
                               onTapCell: () {
-                                _onTapRow(snapshot.data[i]);
+                                _onTapRow(snapshot.data[i], i);
                               },
                               i: i,
                             );
