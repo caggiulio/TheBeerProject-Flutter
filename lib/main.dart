@@ -55,6 +55,22 @@ class _MyHomePageState extends State<MyHomePage> {
   final API api = new API();
 
   Beer selectedBeer;
+  bool isSearching;
+  TextEditingController searchController;
+  String queryName = "";
+
+  @override
+  void initState() {
+    super.initState();
+    isSearching = false;
+    searchController = TextEditingController();
+    searchController.addListener(() {
+        setState(() {
+          this.queryName = searchController.text;
+          api.fetchedBeers.clear();
+        });
+    });
+  }
 
   void _onTapRow(Beer data) {
     selectedBeer = data;
@@ -63,8 +79,6 @@ class _MyHomePageState extends State<MyHomePage> {
         builder: (BuildContext context) {
           return new BeerDetail(data: selectedBeer);
         });
-    /*Navigator.push(
-        context, CupertinoPageRoute(builder: (context) => BeerDetail()));*/
   }
 
   int page = 1;
@@ -94,13 +108,31 @@ class _MyHomePageState extends State<MyHomePage> {
     // than having to individually change instances of widgets.
     return Scaffold(
       appBar: AppBar(
-        title: Text("The Beer Project®"),
+          leading: IconButton(
+            icon: new Icon(Icons.search),
+            onPressed: () {
+              if (isSearching == false) {
+                setState(() {
+                  isSearching = true;
+                });
+              } else {
+                setState(() {
+                  isSearching = false;
+                });
+              }
+            },
+          ),
+          title: isSearching ? TextField(
+            controller: searchController,
+            cursorColor: Colors.white,
+            style: TextStyle(color: Colors.white),
+          ) : Text("The Beer Project®")
       ),
       body: Center(
         // Center is a layout widget. It takes a single child and positions it
         // in the middle of the parent.
         child: FutureBuilder<List<Beer>>(
-          future: api.fetchBeers(page + (loadMore ? 1 : 0)),
+          future: api.fetchBeers(page + (loadMore ? 1 : 0), queryName),
           builder: (context, snapshot) {
             if (snapshot.hasData) {
               if (loadMore) {
@@ -140,14 +172,6 @@ class _MyHomePageState extends State<MyHomePage> {
           },
         ),
       ),
-      /*bottomSheet: selectedBeer != null ?
-        BottomSheet(builder: (BuildContext context) {
-        return new BeerDetail(data: selectedBeer,);
-      }, onClosing: () {
-          setState(() {
-            selectedBeer = null;
-          });
-        },) : Container(height: 0, width: 0,)*/
     );
   }
 }

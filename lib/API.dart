@@ -18,29 +18,33 @@ class API {
   List<Beer> fetchedBeers = new List<Beer>();
   bool noMoreBeers = false;
   bool isBusy = false;
+  int lastCallId = 0;
 
-  Future<List<Beer>> fetchBeers(int page) async {
-    if (isBusy) {
-      throw Exception('Called while busy');
-    } else {
+  Future<List<Beer>> fetchBeers(int page, String query) async {
+    int myCallId = ++lastCallId;
+      var finalQuery = "beers?page=$page";
+      if (query.isNotEmpty) {
+        finalQuery = finalQuery+"&"+"beer_name=$query";
+      }
       isBusy = true;
-      final response = await http.get(host + "beers?page=$page");
+      final response = await http.get(host + finalQuery);
       isBusy = false;
-      if (response.statusCode == 200) {
-        // If the call to the server was successful, parse the JSON
-        final beers = (json.decode(response.body) as List).map((singleJson) =>
-            Beer.fromJson(singleJson)).toList();
-        if (beers.length > 0) {
-          fetchedBeers.addAll(beers);
+      if(lastCallId == myCallId) {
+        if (response.statusCode == 200) {
+          // If the call to the server was successful, parse the JSON
+          final beers = (json.decode(response.body) as List).map((singleJson) =>
+              Beer.fromJson(singleJson)).toList();
+          if (beers.length > 0) {
+            fetchedBeers.addAll(beers);
+          } else {
+            noMoreBeers = true;
+          }
+          return fetchedBeers;
         } else {
-          noMoreBeers = true;
+          // If that call was not successful, throw an error.
+          throw Exception('Failed to load post');
         }
-        return fetchedBeers;
-      } else {
-        // If that call was not successful, throw an error.
-        throw Exception('Failed to load post');
       }
     }
-  }
 
 }
