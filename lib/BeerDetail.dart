@@ -20,7 +20,7 @@ class BeerDetail extends StatelessWidget {
         children: <Widget>[
           Expanded(
             flex: 5,
-            child:
+            child: data.imageUrl == null ? Container() :
             Image.network(data.imageUrl,
                 fit: BoxFit.fitHeight,
                 height: 300,
