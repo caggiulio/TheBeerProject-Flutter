@@ -3,6 +3,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_app/BeerDetail.dart';
 import 'API.dart';
 import 'Beer.dart';
+import 'BeerListHeader.dart';
 import 'BeerListItem.dart';
 
 void main() => runApp(MyApp());
@@ -55,6 +56,7 @@ class _MyHomePageState extends State<MyHomePage> {
   final API api = new API();
 
   Beer selectedBeer;
+  String selectedCategory = "";
   bool isSearching;
   TextEditingController searchController;
   String queryName = "";
@@ -65,10 +67,10 @@ class _MyHomePageState extends State<MyHomePage> {
     isSearching = false;
     searchController = TextEditingController();
     searchController.addListener(() {
-        setState(() {
-          this.queryName = searchController.text;
-          api.fetchedBeers.clear();
-        });
+      setState(() {
+        this.queryName = searchController.text;
+        api.fetchedBeers.clear();
+      });
     });
   }
 
@@ -79,6 +81,18 @@ class _MyHomePageState extends State<MyHomePage> {
         builder: (BuildContext context) {
           return new BeerDetail(data: selectedBeer);
         });
+    /*Navigator.push(
+        context, CupertinoPageRoute(builder: (context) => BeerDetail()));*/
+  }
+
+  void _onTapCategory(String category) {
+    if (selectedCategory != category) {
+      api.resetBeersList();
+      setState(() {
+        page = 1;
+        selectedCategory = category;
+      });
+    }
   }
 
   int page = 1;
@@ -131,8 +145,8 @@ class _MyHomePageState extends State<MyHomePage> {
       body: Center(
         // Center is a layout widget. It takes a single child and positions it
         // in the middle of the parent.
-        child: FutureBuilder<List<Beer>>(
-          future: api.fetchBeers(page + (loadMore ? 1 : 0), queryName),
+        child: FutureBuilder<List<Beer>>(,
+          future: api.fetchBeers(page + (loadMore ? 1 : 0), queryName, selectedCategory),
           builder: (context, snapshot) {
             if (snapshot.hasData) {
               if (loadMore) {
@@ -143,9 +157,19 @@ class _MyHomePageState extends State<MyHomePage> {
               return Container(
                 child: ListView.builder(
                     controller: _scrollController,
-                    itemCount: snapshot.data.length + (api.noMoreBeers ? 0 : 1),
+                    itemCount:
+                        1 + snapshot.data.length + (api.noMoreBeers ? 0 : 1),
                     // ignore: missing_return
                     itemBuilder: (BuildContext context, i) {
+                      if (i == 0) {
+                        return new BeerListHeader(
+                          onTapCell: _onTapCategory,
+                          checkSelected: (key) {
+                            return key == selectedCategory;
+                          },
+                        );
+                      }
+                      i--;
                       return i >= snapshot.data.length
                           ? Column(
                               crossAxisAlignment: CrossAxisAlignment.center,
