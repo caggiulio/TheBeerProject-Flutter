@@ -4,6 +4,7 @@ import 'dart:convert';
 import 'package:flutter/material.dart';
 import 'package:http/http.dart' as http;
 import 'Beer.dart';
+import 'Food.dart';
 
 class API {
 
@@ -14,7 +15,14 @@ class API {
     // init things inside this
   }
 
-  final host = 'https://api.punkapi.com/v2/';
+  final beerApiHost = 'https://api.punkapi.com/v2/';
+
+  final foodApiHost = 'https://trackapi.nutritionix.com/v2/';
+  final foodApiHeaders = {
+    'x-app-id': 'f7193d7d',
+    'x-app-key': 'd04238753bd14759b0ca06caaf7700b2',
+    'x-remote-user-id': '0'
+  };
 
   List<Beer> fetchedBeers = new List<Beer>();
   bool noMoreBeers = false;
@@ -26,6 +34,7 @@ class API {
     noMoreBeers = false;
   }
 
+
   Future<List<Beer>> fetchBeers(int page, String query, String malt) async {
     int myCallId = ++lastCallId;
     isBusy = true;
@@ -36,7 +45,7 @@ class API {
     if (malt.isNotEmpty) {
       finalQuery = finalQuery + "&malt=$malt";
     }
-    final response = await http.get(host + finalQuery);
+    final response = await http.get(beerApiHost + finalQuery);
     isBusy = false;
     if (lastCallId == myCallId) {
       if (response.statusCode == 200) {
@@ -58,7 +67,7 @@ class API {
 
   Future<Beer> fetchRandomBeer() async {
     final endpoint = "beers/random";
-    final response = await http.get(host + endpoint);
+    final response = await http.get(beerApiHost + endpoint);
 
     if (response.statusCode == 200) {
       // If the call to the server was successful, parse the JSON
@@ -68,6 +77,24 @@ class API {
     } else {
       // If that call was not successful, throw an error.
       throw Exception('Failed to load post');
+    }
+  }
+
+  Future<List<Food>> searchFood(String text) async {
+    final endpoint = "search/instant?query=$text";
+    final response = await http.get(foodApiHost + endpoint, headers: foodApiHeaders);
+
+    if (response.statusCode == 200) {
+      // If the call to the server was successful, parse the JSON
+      final resJson = (json.decode(response.body) as Map<String, dynamic>);
+      final foods = (resJson["common"] as List).map((foodJson) =>
+          Food.fromJson(foodJson)
+      ).toList();
+
+      return foods;
+    } else {
+      // If that call was not successful, throw an error.
+      throw Exception('Failed to load food');
     }
   }
 }
