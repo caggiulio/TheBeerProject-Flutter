@@ -5,6 +5,7 @@ import 'API.dart';
 import 'Beer.dart';
 import 'BeerListHeader.dart';
 import 'BeerListItem.dart';
+import 'FoodSearch.dart';
 import 'RandomBeer.dart';
 
 void main() => runApp(MyApp());
@@ -122,94 +123,100 @@ class _MyHomePageState extends State<MyHomePage> {
     // fast, so that you can just rebuild anything that needs updating rather
     // than having to individually change instances of widgets.
     return Scaffold(
-      appBar: AppBar(
-          leading: IconButton(
-            icon: new Icon(Icons.search),
-            onPressed: () {
-              if (isSearching == false) {
-                setState(() {
-                  isSearching = true;
-                });
-              } else {
-                setState(() {
-                  isSearching = false;
-                });
-              }
-            },
-          ),
-          title: isSearching ? TextField(
-            controller: searchController,
-            cursorColor: Colors.white,
-            style: TextStyle(color: Colors.white),
-          ) : Text("The Beer Project®")
-      ),
-      body:
-      Center(
-        child: Column(
-        mainAxisSize: MainAxisSize.min,
-        children: <Widget>[
-        Container(
-        height: 100,
-        margin: EdgeInsets.only(top: 12.0, left: 12.0, right: 12.0),
-        child: RandomBeer(api: api, onTapFunc: _onTapRow)
-    ),
-    Flexible(
-    child: FutureBuilder<List<Beer>>(
-          future: api.fetchBeers(page + (loadMore ? 1 : 0), queryName, selectedCategory),
-          builder: (context, snapshot) {
-            if (snapshot.hasData) {
-              if (loadMore) {
-                print("page from $page to ${page + 1}");
-                page++;
-                loadMore = false;
-              }
-              return Container(
-                child: ListView.builder(
-                    controller: _scrollController,
-                    itemCount:
-                        1 + snapshot.data.length + (api.noMoreBeers ? 0 : 1),
-                    // ignore: missing_return
-                    itemBuilder: (BuildContext context, i) {
-                      if (i == 0) {
-                        return new BeerListHeader(
-                          onTapCell: _onTapCategory,
-                          checkSelected: (key) {
-                            return key == selectedCategory;
-                          },
+        appBar: AppBar(
+            leading: IconButton(
+              icon: new Icon(Icons.search),
+              onPressed: () {
+                if (isSearching == false) {
+                  setState(() {
+                    isSearching = true;
+                  });
+                } else {
+                  setState(() {
+                    isSearching = false;
+                  });
+                }
+              },
+            ),
+            title: isSearching
+                ? TextField(
+                    controller: searchController,
+                    cursorColor: Colors.white,
+                    style: TextStyle(color: Colors.white),
+                  )
+                : Text("The Beer Project®")),
+        body: DefaultTabController(
+          length: 2,
+          child: TabBarView(
+              children: <Widget>[
+            Center(
+                child: Column(
+              mainAxisSize: MainAxisSize.min,
+              children: <Widget>[
+                Container(
+                    height: 100,
+                    margin: EdgeInsets.only(top: 12.0, left: 12.0, right: 12.0),
+                    child: RandomBeer(api: api, onTapFunc: _onTapRow)),
+                Flexible(
+                  child: FutureBuilder<List<Beer>>(
+                    future: api.fetchBeers(
+                        page + (loadMore ? 1 : 0), queryName, selectedCategory),
+                    builder: (context, snapshot) {
+                      if (snapshot.hasData) {
+                        if (loadMore) {
+                          print("page from $page to ${page + 1}");
+                          page++;
+                          loadMore = false;
+                        }
+                        return Container(
+                          child: ListView.builder(
+                              controller: _scrollController,
+                              itemCount: 1 +
+                                  snapshot.data.length +
+                                  (api.noMoreBeers ? 0 : 1),
+                              // ignore: missing_return
+                              itemBuilder: (BuildContext context, i) {
+                                if (i == 0) {
+                                  return new BeerListHeader(
+                                    onTapCell: _onTapCategory,
+                                    checkSelected: (key) {
+                                      return key == selectedCategory;
+                                    },
+                                  );
+                                }
+                                i--;
+                                return i >= snapshot.data.length
+                                    ? Column(
+                                        crossAxisAlignment:
+                                            CrossAxisAlignment.center,
+                                        children: <Widget>[
+                                            Container(
+                                                padding: EdgeInsets.all(10),
+                                                child:
+                                                    CircularProgressIndicator())
+                                          ])
+                                    : new BeerListItem(
+                                        data: snapshot.data[i],
+                                        onTapCell: () {
+                                          _onTapRow(snapshot.data[i], i);
+                                        },
+                                        i: i,
+                                      );
+                              }),
                         );
+                      } else if (snapshot.hasError) {
+                        return Text("${snapshot.error}");
                       }
-                      i--;
-                      return i >= snapshot.data.length
-                          ? Column(
-                              crossAxisAlignment: CrossAxisAlignment.center,
-                              children: <Widget>[
-                                  Container(
-                                      padding: EdgeInsets.all(10),
-                                      child: CircularProgressIndicator())
-                                ])
-                          : new BeerListItem(
-                              data: snapshot.data[i],
-                              onTapCell: () {
-                                _onTapRow(snapshot.data[i], i);
-                              },
-                              i: i,
-                            );
-                    }),
-              );
-            } else if (snapshot.hasError) {
-              return Text("${snapshot.error}");
-            }
 
-                        // By default, show a loading spinner.
-                        return CircularProgressIndicator();
-                      },
-                    ),
+                      // By default, show a loading spinner.
+                      return CircularProgressIndicator();
+                    },
+                  ),
                 )
-
               ],
-            )
-          )
-
-    );
+            )),
+            FoodSearch(api: api)
+          ]),
+        ));
   }
 }
